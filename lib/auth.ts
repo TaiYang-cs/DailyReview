@@ -1,18 +1,22 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getCurrentUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-  if (error) {
+    if (error) {
+      return null;
+    }
+
+    return user;
+  } catch {
     return null;
   }
-
-  return user;
 }
 
 export async function requireUser() {
@@ -26,6 +30,10 @@ export async function requireUser() {
 }
 
 export async function signOutCurrentUser() {
-  const supabase = await createClient();
-  await supabase.auth.signOut({ scope: "local" });
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut({ scope: "local" });
+  } catch {
+    // If Supabase is not configured locally, treat sign-out as already complete.
+  }
 }
