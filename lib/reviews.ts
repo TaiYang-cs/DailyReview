@@ -1,4 +1,4 @@
-﻿import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 
 export type Review = {
@@ -103,6 +103,31 @@ export async function getHeatmapData(year: number) {
     .sort((a, b) => a.date.localeCompare(b.date)) satisfies HeatmapItem[];
 }
 
+
+export async function getAvailableReviewYears() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("date")
+    .eq("is_public", true)
+    .order("date", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to load available years: ${error.message}`);
+  }
+
+  const currentYear = new Date().getFullYear();
+  const years = new Set<number>([currentYear]);
+
+  for (const item of data ?? []) {
+    const year = Number(String(item.date).slice(0, 4));
+    if (Number.isFinite(year)) {
+      years.add(year);
+    }
+  }
+
+  return Array.from(years).sort((a, b) => a - b);
+}
 export async function createReview(input: ReviewInput) {
   const user = await getCurrentUser();
 
