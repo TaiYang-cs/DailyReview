@@ -39,10 +39,14 @@ type ReviewDetailPageProps = {
 // 校验日期字符串是否是合法的 YYYY-MM-DD
 function isValidDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const d = new Date(`${value}T00:00:00`);
+
+  const [year, month, day] = value.split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day));
+
   return (
-    !Number.isNaN(d.getTime()) &&
-    d.toISOString().slice(0, 10) === value
+    d.getUTCFullYear() === year &&
+    d.getUTCMonth() === month - 1 &&
+    d.getUTCDate() === day
   );
 }
 

@@ -65,6 +65,8 @@ export async function getReviewByDate(date: string) {
     .select(publicReviewColumns)
     .eq("date", date)
     .eq("is_public", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (error) {

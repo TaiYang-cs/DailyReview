@@ -29,13 +29,26 @@ type MarkdownRendererProps = {
 // 用占位符把行内代码的内容暂存起来，避免被后面的粗体/斜体规则误伤
 const CODE_PLACEHOLDER = (i: number) => `\u0000CODE${i}\u0000`;
 
+const SAFE_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
+
+function isSafeLinkHref(href: string): boolean {
+  if (href.startsWith("/") || href.startsWith("#")) return true;
+
+  try {
+    const url = new URL(href);
+    return SAFE_LINK_PROTOCOLS.has(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   // 暂存行内代码片段
   const codeStore: ReactNode[] = [];
 
   // 1) 先把 `code` 摘出来，替换成占位符
-  let working = text.replace(/`([^`]+)`/g, (_m, code: string) => {
+  const working = text.replace(/`([^`]+)`/g, (_m, code: string) => {
     const idx = codeStore.length;
     codeStore.push(
       <code
@@ -75,7 +88,7 @@ function renderInline(text: string): ReactNode[] {
     if (token.startsWith("[")) {
       // 链接 [text](url)
       const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
-      if (linkMatch) {
+      if (linkMatch && isSafeLinkHref(linkMatch[2])) {
         nodes.push(
           <a
             key={`link-${keyCounter}`}
@@ -87,6 +100,8 @@ function renderInline(text: string): ReactNode[] {
             {linkMatch[1]}
           </a>,
         );
+      } else if (linkMatch) {
+        nodes.push(<span key={`link-${keyCounter}`}>{linkMatch[1]}</span>);
       }
     } else if (token.startsWith("**")) {
       // 粗体 **text**
