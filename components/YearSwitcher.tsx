@@ -1,4 +1,4 @@
-"use client"; // 🔴 有点击交互，必须写
+"use client";
 
 // ============================================================
 // YearSwitcher —— 年份切换组件
@@ -23,20 +23,22 @@ export default function YearSwitcher({
   availableYears,
   onChange,
 }: YearSwitcherProps) {
-  // 找出可选年份里的最小和最大值，用来禁用到头的箭头
-  const minYear = Math.min(...availableYears);
-  const maxYear = Math.max(...availableYears);
+  const years = Array.from(new Set(availableYears)).sort((a, b) => a - b);
+  const currentIndex = years.indexOf(year);
+  const safeIndex = currentIndex === -1 ? years.length - 1 : currentIndex;
+  const prevYear = safeIndex > 0 ? years[safeIndex - 1] : null;
+  const nextYear = safeIndex < years.length - 1 ? years[safeIndex + 1] : null;
 
   // 是否已经到最早/最晚（到头了箭头就禁用）
-  const canGoPrev = year > minYear;
-  const canGoNext = year < maxYear;
+  const canGoPrev = prevYear !== null;
+  const canGoNext = nextYear !== null;
 
   return (
     <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white/80 p-1 shadow-sm">
       {/* 上一年 */}
       <button
         type="button"
-        onClick={() => canGoPrev && onChange(year - 1)}
+        onClick={() => prevYear !== null && onChange(prevYear)}
         disabled={!canGoPrev}
         aria-label="上一年"
         className={`
@@ -60,7 +62,7 @@ export default function YearSwitcher({
       {/* 下一年 */}
       <button
         type="button"
-        onClick={() => canGoNext && onChange(year + 1)}
+        onClick={() => nextYear !== null && onChange(nextYear)}
         disabled={!canGoNext}
         aria-label="下一年"
         className={`
