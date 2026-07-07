@@ -1,17 +1,12 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import {
   createReview,
   deleteReview,
-  type Review,
   type ReviewInput,
   updateReview,
 } from "@/lib/reviews";
-
-type AdminActionResult<T = Review> =
-  | { success: true; message: string; data: T }
-  | { success: false; message: string };
 
 function parseTags(value: FormDataEntryValue | null) {
   return String(value ?? "")
@@ -31,81 +26,31 @@ function parseReviewInput(formData: FormData): ReviewInput {
   };
 }
 
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
+export async function createReviewAction(formData: FormData) {
+  const review = await createReview(parseReviewInput(formData));
 
-  return "操作失败，请检查登录状态或 Supabase 配置。";
-}
-
-function revalidateReviewPaths(date?: string) {
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/reviews");
 
-  if (date) {
-    revalidatePath(`/reviews/${date}`);
-  }
+  return review;
 }
 
-export async function createReviewAction(
-  formData: FormData,
-): Promise<AdminActionResult> {
-  try {
-    const review = await createReview(parseReviewInput(formData));
-    revalidateReviewPaths(review.date);
+export async function updateReviewAction(id: string, formData: FormData) {
+  const review = await updateReview(id, parseReviewInput(formData));
 
-    return {
-      success: true,
-      message: "保存成功。",
-      data: review,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: getErrorMessage(error),
-    };
-  }
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/reviews");
+  revalidatePath(`/reviews/${review.date}`);
+
+  return review;
 }
 
-export async function updateReviewAction(
-  id: string,
-  formData: FormData,
-): Promise<AdminActionResult> {
-  try {
-    const review = await updateReview(id, parseReviewInput(formData));
-    revalidateReviewPaths(review.date);
+export async function deleteReviewAction(id: string) {
+  await deleteReview(id);
 
-    return {
-      success: true,
-      message: "更新成功。",
-      data: review,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: getErrorMessage(error),
-    };
-  }
-}
-
-export async function deleteReviewAction(
-  id: string,
-): Promise<AdminActionResult<null>> {
-  try {
-    await deleteReview(id);
-    revalidateReviewPaths();
-
-    return {
-      success: true,
-      message: "删除成功。",
-      data: null,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: getErrorMessage(error),
-    };
-  }
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/reviews");
 }

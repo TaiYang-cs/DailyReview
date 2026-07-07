@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, signOutCurrentUser } from "@/lib/auth";
 
@@ -28,25 +28,15 @@ async function login(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent("请输入邮箱和密码")}&next=${next}`);
   }
 
-  let errorMessage: string | null = null;
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-  try {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      errorMessage = "登录失败，请检查邮箱或密码";
-    }
-  } catch {
-    errorMessage = "Supabase 环境变量未配置，暂时无法登录";
-  }
-
-  if (errorMessage) {
+  if (error) {
     redirect(
-      `/login?error=${encodeURIComponent(errorMessage)}&next=${next}`,
+      `/login?error=${encodeURIComponent("登录失败，请检查邮箱或密码")}&next=${next}`,
     );
   }
 
